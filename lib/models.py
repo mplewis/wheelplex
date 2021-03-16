@@ -4,6 +4,7 @@ from typing import Optional, List
 
 
 AuthToken = str
+Section = str
 
 
 @dataclass
@@ -27,3 +28,4 @@ class SessionData:
     auth_token: Optional[AuthToken] = None
     servers: Optional[List[ServerMeta]] = None
     current_server: Optional[ServerMeta] = None
+    current_section: Optional[Section] = None

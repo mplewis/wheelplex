@@ -1,8 +1,10 @@
+import requests
 from datetime import datetime, timedelta
 from typing import Optional, Dict, List
 from plexapi.server import PlexServer
 from fastapi import FastAPI, Request, Response
-from starlette.responses import HTMLResponse
+from fastapi.responses import StreamingResponse
+from starlette.responses import HTMLResponse, RedirectResponse
 from pprint import pprint
 
 from lib.models import SessionData, ServerMeta, AuthToken
@@ -45,9 +47,8 @@ async def set_cookie_if_unset(request: Request, call_next):
 
 
 @app.get("/")
-def login_page(request: Request):
+def home(request: Request):
     sess = get_session(request)
-    sess.auth_token = "mthF95mydni-no6G5M4o"
     if not sess:
         return refresh()
     if not sess.auth_token:
@@ -64,6 +65,14 @@ def login_page(request: Request):
         ]
         return HTMLResponse(f"<pre><code>{links}</code></pre>")
 
+    if not sess.current_section:
+        conn = connect(sess)
+        links = [
+            f'<a href="/select_section/{s.title}">{s.title}</a>'
+            for s in conn.library.sections()
+        ]
+        return HTMLResponse(f"<pre><code>{links}</code></pre>")
+
     return HTMLResponse("<h1>OK</h1>")
 
 
@@ -77,8 +86,60 @@ def select_server(request: Request, name: str):
     for server in sess.servers:
         if name == server.name:
             sess.current_server = server
-            return refresh("/")
+            return RedirectResponse("/")
     return Response(status_code=404)
+
+
+@app.get("/select_section/{name}")
+def select_section(request: Request, name: str):
+    sess = get_session(request)
+    if not sess:
+        return refresh()
+    sess.current_section = name
+    return RedirectResponse("/")
+
+
+@app.get("/list")
+def list_items(request: Request):
+    sess = get_session(request)
+    if not sess:
+        return Response(status_code=400)
+    if not sess.current_server:
+        return Response(status_code=400)
+    if not sess.current_section:
+        return Response(status_code=400)
+
+    return items_for_section(sess)
+
+
+def items_for_section(sess: SessionData) -> List[dict]:
+    conn = connect(sess)
+    items = conn.library.section(sess.current_section).all()
+    data = []
+    for i in items:
+        data.append(
+            {
+                "title": i.title,
+                "audienceRating": i.audienceRating,
+                "criticRating": i.rating,
+                "summary": i.summary,
+                "genres": [g.tag for g in i.genres],
+                "thumb": f"/plex_asset/{i.thumb}",
+            }
+        )
+
+
+@app.get("/plex_asset/{path:path}")
+def proxy_asset(request: Request, path: str):
+    sess = get_session(request)
+    if not sess:
+        return Response(status_code=400)
+    if not sess.auth_token:
+        return Response(status_code=400)
+    uri = f"{url_for(sess.current_server)}/{path}"
+    resp = requests.get(uri, params={"X-Plex-Token": sess.auth_token}, stream=True)
+    resp.raise_for_status()
+    return StreamingResponse(resp.raw, media_type=resp.headers["Content-Type"])
 
 
 def list_servers(t: AuthToken) -> List[ServerMeta]:
@@ -96,5 +157,9 @@ def list_servers(t: AuthToken) -> List[ServerMeta]:
     return servers
 
 
-def connect(to: ServerMeta, token: str) -> PlexServer:
-    return PlexServer(f"{to.scheme}://{to.host}:{to.port}", token)
+def url_for(server: ServerMeta) -> str:
+    return f"{server.scheme}://{server.host}:{server.port}"
+
+
+def connect(sess: SessionData) -> PlexServer:
+    return PlexServer(url_for(sess.current_server), sess.auth_token)

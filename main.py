@@ -6,6 +6,7 @@ from plexapi.server import PlexServer
 from plexapi.video import Movie
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from starlette.responses import HTMLResponse, RedirectResponse
 from pprint import pprint
 
@@ -76,7 +77,7 @@ def home(request: Request):
         ]
         return HTMLResponse(f"<pre><code>{links}</code></pre>")
 
-    return HTMLResponse("<h1>OK</h1>")
+    return RedirectResponse("wheel.html")
 
 
 @app.get("/select_server/{name}")
@@ -152,6 +153,9 @@ def proxy_asset(request: Request, path: str):
     resp = requests.get(uri, params={"X-Plex-Token": sess.auth_token}, stream=True)
     resp.raise_for_status()
     return StreamingResponse(resp.raw, media_type=resp.headers["Content-Type"])
+
+
+app.mount("/", StaticFiles(directory="static"), name="static")
 
 
 def list_servers(t: AuthToken) -> List[ServerMeta]:

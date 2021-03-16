@@ -1,7 +1,9 @@
 import requests
+import concurrent
 from datetime import datetime, timedelta
 from typing import Optional, Dict, List
 from plexapi.server import PlexServer
+from plexapi.video import Movie
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import StreamingResponse
 from starlette.responses import HTMLResponse, RedirectResponse
@@ -14,6 +16,7 @@ from lib.plex_client import plex_req
 
 
 SESSION_EXPIRY = timedelta(hours=24)
+METADATA_WORKER_COUNT = 100
 
 
 app = FastAPI()
@@ -112,21 +115,30 @@ def list_items(request: Request):
     return items_for_section(sess)
 
 
+def meta_for_movie(i: Movie) -> dict:
+    return {
+        "title": i.title,
+        "audience_rating": i.audienceRating,
+        "critic_rating": i.rating,
+        "summary": i.summary,
+        "genres": [g.tag for g in i.genres],
+        "thumbnail_url": f"/plex_asset{i.thumb}",
+        "viewed_at": i.viewedAt,
+    }
+
+
 def items_for_section(sess: SessionData) -> List[dict]:
     conn = connect(sess)
     items = conn.library.section(sess.current_section).all()
-    data = []
-    for i in items:
-        data.append(
-            {
-                "title": i.title,
-                "audienceRating": i.audienceRating,
-                "criticRating": i.rating,
-                "summary": i.summary,
-                "genres": [g.tag for g in i.genres],
-                "thumb": f"/plex_asset/{i.thumb}",
-            }
-        )
+
+    with concurrent.futures.ThreadPoolExecutor(
+        max_workers=METADATA_WORKER_COUNT
+    ) as executor:
+        futures = []
+        for i in items:
+            futures.append(executor.submit(meta_for_movie, i))
+        results = concurrent.futures.wait(futures)
+    return [r.result() for r in results.done]
 
 
 @app.get("/plex_asset/{path:path}")

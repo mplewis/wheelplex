@@ -25,7 +25,7 @@ def pair(sess: SessionData):
         return HTMLResponse(
             f"""
             <p>
-                Please visit <a href="https://www.plex.tv/link/">plex.tv/link</a> to pair.
+                Please visit <a href="https://www.plex.tv/link/" target="_blank">plex.tv/link</a> to pair.
                 Use the following token: <code>{sess.pairing.pin}</code>
             </p>
             <p>

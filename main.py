@@ -23,9 +23,6 @@ async def set_cookie_if_unset(request: Request, call_next):
     return response
 
 
-app.mount("/", StaticFiles(directory="static"), name="static")
-
-
 @app.get("/")
 def home(request: Request):
     sess = get_session(request)
@@ -105,3 +102,6 @@ def proxy_asset(request: Request, path: str):
     resp = requests.get(uri, params={"X-Plex-Token": sess.auth_token}, stream=True)
     resp.raise_for_status()
     return StreamingResponse(resp.raw, media_type=resp.headers["Content-Type"])
+
+
+app.mount("/", StaticFiles(directory="static"), name="static")

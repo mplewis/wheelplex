@@ -1,5 +1,7 @@
 import requests
-import xmltodict
+import xmltodict  # type: ignore
+from lib.models import ServerMeta, AuthToken
+from typing import List
 
 
 PLEX_IDENT_HEADERS = {
@@ -26,3 +28,18 @@ def plex_req(method: str, path: str, *, token=None, xml=False) -> dict:
     if xml:
         return xmltodict.parse(resp.text)
     return resp.json()
+
+
+def list_servers(t: AuthToken) -> List[ServerMeta]:
+    data = plex_req("get", "pms/servers", token=t, xml=True)
+    servers = []
+    for raw in data["MediaContainer"]["Server"]:
+        servers.append(
+            ServerMeta(
+                name=raw["@name"],
+                scheme=raw["@scheme"],
+                host=raw["@host"],
+                port=raw["@port"],
+            )
+        )
+    return servers

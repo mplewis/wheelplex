@@ -3,7 +3,7 @@ from starlette.responses import HTMLResponse
 
 from lib.models import SessionData, AuthToken, Pairing
 from lib.utils import refresh
-from lib.plex_client import plex_req
+from lib.plex_discovery import plex_req
 
 
 def start_pairing() -> Pairing:

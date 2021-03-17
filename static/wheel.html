@@ -10,33 +10,41 @@
   <body>
     <div id="app" class="container my-2 mx-auto">
       <h1 class="is-size-3 has-text-weight-bold">Wheelplex</h1>
+
       <p v-if="mode == 'loading'">
         Loading data from your Plex server. Please wait...
       </p>
-      <ul>
-        <li>
-          <label class="checkbox">
-            <input type="checkbox" v-model="filters.unwatched" />
-            Unwatched
-          </label>
-        </li>
-        <li>
-          <label class="checkbox">
-            <input type="checkbox" v-model="filters.bad_critic" />
-            Bad critic reviews
-          </label>
-        </li>
-        <li>
-          <label class="checkbox">
-            <input type="checkbox" v-model="filters.bad_audience" />
-            Bad audience reviews
-          </label>
-        </li>
-      </ul>
-      <p>{{filtered.length}} movies selected</p>
-      <button class="button has-text-weight-bold is-size-3 my-2 is-success">
-        SPIN
-      </button>
+
+      <div v-if="mode == 'ready'">
+        <ul>
+          <li>
+            <label class="checkbox">
+              <input type="checkbox" v-model="filters.unwatched" />
+              Unwatched
+            </label>
+          </li>
+          <li>
+            <label class="checkbox">
+              <input type="checkbox" v-model="filters.bad_critic" />
+              Bad critic reviews
+            </label>
+          </li>
+          <li>
+            <label class="checkbox">
+              <input type="checkbox" v-model="filters.bad_audience" />
+              Bad audience reviews
+            </label>
+          </li>
+        </ul>
+        <p>{{filtered.length}} movies selected</p>
+        <button
+          class="button has-text-weight-bold is-size-3 my-2 is-success"
+          v-on:click="spin"
+        >
+          SPIN
+        </button>
+      </div>
+
       <canvas
         v-if="mode == 'spinning' || mode == 'done'"
         id="canvas"

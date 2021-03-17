@@ -30,14 +30,15 @@ async function main() {
       message: "hello!",
       items: null,
       filters: pretoggled,
+      spunAt: null,
     }),
 
     computed: {
       mode() {
         if (!this.items) return "loading";
-        return "ready";
-        // spinning
-        // done
+        if (!this.spunAt) return "ready";
+        if (new Date() - this.spunAt < songLength) return "spinning";
+        return "done";
       },
 
       filtered() {
@@ -48,6 +49,12 @@ async function main() {
           remaining = remaining.filter((item) => filters[name](item));
         });
         return remaining;
+      },
+    },
+
+    methods: {
+      spin() {
+        this.spunAt = new Date();
       },
     },
 

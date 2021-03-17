@@ -15,7 +15,51 @@ colors = [
   "#95afc0",
 ];
 
+const filters = {
+  unwatched: (i) => !i.viewed_at,
+  bad_critic: (i) => i.critic_rating < 4,
+  bad_audience: (i) => i.audience_rating < 4,
+};
+
 async function main() {
+  const pretoggled = {};
+  Object.keys(filters).forEach((k) => (pretoggled[k] = false));
+
+  const app = Vue.createApp({
+    data: () => ({
+      message: "hello!",
+      items: null,
+      filters: pretoggled,
+    }),
+
+    computed: {
+      mode() {
+        if (!this.items) return "loading";
+        return "ready";
+        // spinning
+        // done
+      },
+
+      filtered() {
+        if (!this.items) return [];
+        remaining = this.items.slice();
+        Object.entries(this.filters).forEach(([name, enabled]) => {
+          if (!enabled) return;
+          remaining = remaining.filter((item) => filters[name](item));
+        });
+        return remaining;
+      },
+    },
+
+    async mounted() {
+      this.items = await library();
+    },
+  });
+
+  app.mount("#app");
+}
+
+async function oldBuildWheel() {
   const items = (await library()).slice();
   shuffle(items);
   shuffle(colors);

@@ -1,13 +1,64 @@
-<h1>App!!</h1>
-<canvas id="canvas" width="600" height="600"></canvas>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="style.css" />
+    <title>Wheelplex</title>
+  </head>
+  <body>
+    <div id="app" class="container my-2 mx-auto">
+      <h1 class="is-size-3 has-text-weight-bold">Wheelplex</h1>
+      <p v-if="mode == 'loading'">
+        Loading data from your Plex server. Please wait...
+      </p>
+      <ul>
+        <li>
+          <label class="checkbox">
+            <input type="checkbox" v-model="filters.unwatched" />
+            Unwatched
+          </label>
+        </li>
+        <li>
+          <label class="checkbox">
+            <input type="checkbox" v-model="filters.bad_critic" />
+            Bad critic reviews
+          </label>
+        </li>
+        <li>
+          <label class="checkbox">
+            <input type="checkbox" v-model="filters.bad_audience" />
+            Bad audience reviews
+          </label>
+        </li>
+      </ul>
+      <p>{{filtered.length}} movies selected</p>
+      <button class="button has-text-weight-bold is-size-3 my-2 is-success">
+        SPIN
+      </button>
+      <canvas
+        v-if="mode == 'spinning' || mode == 'done'"
+        id="canvas"
+        width="600"
+        height="600"
+      ></canvas>
+    </div>
 
-<script src="winwheel-2.8.0.min.js"></script>
-<script
-  src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.1.3/TweenMax.min.js"
-  integrity="sha512-DkPsH9LzNzZaZjCszwKrooKwgjArJDiEjA5tTgr3YX4E6TYv93ICS8T41yFHJnnSmGpnf0Mvb5NhScYbwvhn2w=="
-  crossorigin="anonymous"
-></script>
-<script src="app.js"></script>
-<script>
-  main();
-</script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.0.7/vue.global.js"
+      integrity="sha512-+i5dAv2T8IUOP7oRl2iqlAErpjtBOkNtREnW/Te+4VgQ52h4tAY5biFFQJmF03jVDWU4R7l47BwV8H6qQ+/MfA=="
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.1.3/TweenMax.min.js"
+      integrity="sha512-DkPsH9LzNzZaZjCszwKrooKwgjArJDiEjA5tTgr3YX4E6TYv93ICS8T41yFHJnnSmGpnf0Mvb5NhScYbwvhn2w=="
+      crossorigin="anonymous"
+    ></script>
+    <script src="winwheel-2.8.0.min.js"></script>
+    <script src="app.js"></script>
+    <script>
+      main();
+    </script>
+  </body>
+</html>

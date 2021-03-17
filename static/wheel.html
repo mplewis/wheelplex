@@ -9,48 +9,97 @@
   </head>
   <body>
     <div id="app" class="container my-2 mx-auto">
-      <h1 class="is-size-3 has-text-weight-bold">Wheelplex</h1>
+      <div>
+        <h1 class="is-size-1 has-text-weight-bold has-text-centered mb-4">
+          W H E E L P L E X
+        </h1>
 
-      <p v-if="mode == 'loading'">
-        Loading data from your Plex server. Please wait...
-      </p>
+        <p v-if="mode === 'loading'">
+          Loading data from your Plex server. Please wait...
+        </p>
 
-      <div v-if="mode == 'ready'">
-        <ul>
-          <li>
-            <label class="checkbox">
-              <input type="checkbox" v-model="filters.unwatched" />
-              Unwatched
-            </label>
-          </li>
-          <li>
-            <label class="checkbox">
-              <input type="checkbox" v-model="filters.bad_critic" />
-              Bad critic reviews
-            </label>
-          </li>
-          <li>
-            <label class="checkbox">
-              <input type="checkbox" v-model="filters.bad_audience" />
-              Bad audience reviews
-            </label>
-          </li>
-        </ul>
-        <p>{{filtered.length}} movies selected</p>
-        <button
-          class="button has-text-weight-bold is-size-3 my-2 is-success"
-          v-on:click="spin"
-        >
-          SPIN
-        </button>
+        <div v-if="mode === 'ready'">
+          <p class="has-text-weight-bold">Filter your collection:</p>
+          <ul class="my-2">
+            <li>
+              <label class="checkbox">
+                <input type="checkbox" v-model="filters.unwatched" />
+                Unwatched
+              </label>
+            </li>
+            <li>
+              <label class="checkbox">
+                <input type="checkbox" v-model="filters.bad_critic" />
+                Bad critic reviews
+              </label>
+            </li>
+            <li>
+              <label class="checkbox">
+                <input type="checkbox" v-model="filters.bad_audience" />
+                Bad audience reviews
+              </label>
+            </li>
+            <li>
+              <label class="checkbox">
+                <input type="checkbox" v-model="filters.disparity" />
+                Audiences liked, but critics hated
+              </label>
+            </li>
+          </ul>
+
+          <p class="has-text-weight-bold">
+            {{filtered.length}} movies selected
+          </p>
+          <button
+            class="button has-text-weight-bold is-size-3 my-2 is-success"
+            v-on:click="spin"
+          >
+            SPIN
+          </button>
+        </div>
       </div>
 
-      <canvas
-        v-if="mode == 'spinning' || mode == 'done'"
-        id="canvas"
-        width="600"
-        height="600"
-      ></canvas>
+      <div v-show="mode === 'spinning' || mode === 'done'">
+        <div class="columns">
+          <div class="column">
+            <canvas id="canvas" width="660" height="660"></canvas>
+          </div>
+
+          <div class="column">
+            <div v-if="mode === 'done'">
+              <h1 class="is-size-3 has-text-weight-bold">{{winner.title}}</h1>
+              <p>{{winner.genres.join(' | ')}}</p>
+              <p>
+                Rotten Tomatoes {{winner.critic_rating}}/10 | Audience
+                {{winner.audience_rating}}/10
+              </p>
+              <img
+                :src="winner.thumbnail_url"
+                alt="Movie poster"
+                width="300"
+                style="min-height: 450px"
+                class="my-3"
+              />
+              <p>{{winner.summary}}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="mode === 'done'" class="mt-4 has-text-centered">
+        <button
+          class="button has-text-weight-bold is-size-5 mx-2 is-danger"
+          v-on:click="reset"
+        >
+          Reset
+        </button>
+        <button
+          class="button has-text-weight-bold is-size-5 mx-2 is-success"
+          v-on:click="spinAgain"
+        >
+          Spin Again
+        </button>
+      </div>
     </div>
 
     <script

@@ -1,7 +1,7 @@
 const oneDaySecs = 60 * 60 * 24;
 const options = 8;
 const breakAtChars = 20;
-const songLength = 5000;
+const songLength = 4500;
 
 colors = [
   "#f6e58d",
@@ -17,8 +17,13 @@ colors = [
 
 const filters = {
   unwatched: (i) => !i.viewed_at,
-  bad_critic: (i) => i.critic_rating < 4,
-  bad_audience: (i) => i.audience_rating < 4,
+  bad_critic: (i) => i.critic_rating && i.critic_rating < 4,
+  bad_audience: (i) => i.audience_rating && i.audience_rating < 4,
+  disparity: (i) =>
+    i.audience_rating &&
+    i.critic_rating &&
+    i.critic_rating < 4 &&
+    i.audience_rating > 6,
 };
 
 async function main() {
@@ -30,14 +35,15 @@ async function main() {
       message: "hello!",
       items: null,
       filters: pretoggled,
-      spunAt: null,
+      spun: false,
+      winner: null,
     }),
 
     computed: {
       mode() {
         if (!this.items) return "loading";
-        if (!this.spunAt) return "ready";
-        if (new Date() - this.spunAt < songLength) return "spinning";
+        if (!this.spun) return "ready";
+        if (!this.winner) return "spinning";
         return "done";
       },
 
@@ -53,12 +59,26 @@ async function main() {
     },
 
     methods: {
-      spin() {
-        this.spunAt = new Date();
+      async spin() {
+        this.spun = true;
+        const start = buildWheel(this.filtered);
+        result = await start();
+        this.winner = result;
+      },
+
+      spinAgain() {
+        this.winner = null;
+        this.spin();
+      },
+
+      reset() {
+        this.spun = false;
+        this.winner = null;
       },
     },
 
     async mounted() {
+      await validateSession();
       this.items = await library();
     },
   });
@@ -66,8 +86,8 @@ async function main() {
   app.mount("#app");
 }
 
-async function oldBuildWheel() {
-  const items = (await library()).slice();
+function buildWheel(library) {
+  const items = library.slice();
   shuffle(items);
   shuffle(colors);
   const segments = items.slice(0, options).map((item, idx) => ({
@@ -92,17 +112,19 @@ async function oldBuildWheel() {
       spins: 6,
     },
   });
+
   const music = new Audio("fanfare.mp3");
 
-  setTimeout(() => {
-    wheel.startAnimation();
-    music.play();
+  return function () {
+    return new Promise((resolve) => {
+      wheel.startAnimation();
+      music.play();
 
-    setTimeout(() => {
-      const item = wheel.getIndicatedSegment().original;
-      console.log(item);
-    }, songLength);
-  }, 1000);
+      setTimeout(() => {
+        return resolve(wheel.getIndicatedSegment().original);
+      }, songLength);
+    });
+  };
 }
 
 function shuffle(arr) {
@@ -110,7 +132,7 @@ function shuffle(arr) {
 }
 
 function multiline(s) {
-  if (s.length < breakAtChars) return s;
+  if (s.length <= breakAtChars) return s;
   for (let i = breakAtChars; i > 0; i--) {
     char = s[i];
     breakpoint = !char.match(/[A-Za-z0-9]/);
@@ -127,6 +149,13 @@ function epoch() {
   return Number(new Date()) / 1000;
 }
 
+async function validateSession() {
+  resp = await fetch("/valid", { credentials: "same-origin" });
+  if (!resp.ok) {
+    window.location.pathname = "/";
+  }
+}
+
 async function library() {
   const expiry = JSON.parse(localStorage.libraryExpiry);
   if (localStorage.libraryItems && epoch() < expiry) {
@@ -137,6 +166,9 @@ async function library() {
 
 async function populate() {
   const resp = await fetch("/list", { credentials: "same-origin" });
+  if (!resp.ok) {
+    window.location.pathname = "/";
+  }
   const data = await resp.json();
   localStorage.libraryItems = JSON.stringify(data);
   localStorage.libraryExpiry = JSON.stringify(epoch() + oneDaySecs);

@@ -5,14 +5,14 @@ from typing import List
 
 
 PLEX_IDENT_HEADERS = {
-    "X-Plex-Platform": "MacOS",
-    "X-Plex-Platform-Version": "10.15.7",
+    "X-Plex-Platform": "Linux",
+    "X-Plex-Platform-Version": "0.0.1",
     "X-Plex-Provides": "controller",
     "X-Plex-Client-Identifier": "wheelplex",
-    "X-Plex-Product": "Wheelplex (matt@mplewis.com)",
+    "X-Plex-Product": "Wheelplex Web",
     "X-Plex-Version": "0.0.1",
-    "X-Plex-Device": "MacBookPro15,2",
-    "X-Plex-Device-Name": "Matt's MacBook",
+    "X-Plex-Device": "Linux",
+    "X-Plex-Device-Name": "Wheelplex",
 }
 
 
@@ -32,8 +32,12 @@ def plex_req(method: str, path: str, *, token=None, xml=False) -> dict:
 
 def list_servers(t: AuthToken) -> List[ServerMeta]:
     data = plex_req("get", "pms/servers", token=t, xml=True)
+    servers_to_parse = data["MediaContainer"]["Server"]
+    # Plex returns either one server alone or a list of servers. Coerce to list.
+    if not isinstance(servers_to_parse, list):
+        servers_to_parse = [servers_to_parse]
     servers = []
-    for raw in data["MediaContainer"]["Server"]:
+    for raw in servers_to_parse:
         servers.append(
             ServerMeta(
                 name=raw["@name"],

@@ -89,6 +89,19 @@ def list_items(request: Request):
     return items_for_section(sess)
 
 
+@app.get("/valid")
+def validate_session(request: Request):
+    sess = get_session(request)
+    if not sess:
+        return Response(status_code=400)
+    if not sess.current_server:
+        return Response(status_code=400)
+    if not sess.current_section:
+        return Response(status_code=400)
+
+    return Response(status_code=204)
+
+
 @app.get("/plex_asset/{path:path}")
 def proxy_asset(request: Request, path: str):
     sess = get_session(request)
